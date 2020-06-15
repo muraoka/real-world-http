@@ -1,13 +1,33 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 )
 
 func main() {
-	resp, err := http.Get("https://localhost:18443")
+	cert, err := ioutil.ReadFile("ca.crt")
+	if err != nil {
+		panic(err)
+	}
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(cert)
+	tlsConfig := &tls.Config{
+		RootCAs: certPool,
+	}
+	tlsConfig.BuildNameToCertificate()
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
+
+	resp, err := client.Get("https://localhost:18443")
 	if err != nil {
 		panic(err)
 	}
